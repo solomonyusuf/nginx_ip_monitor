@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  nginx:
+    build: ./nginx
+    container_name: nginx_gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"       # ONLY public port
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:rw
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./site1:/var/www/site1:ro
+      - ./site2:/var/www/site2:ro
+      - ./logs/nginx:/var/log/nginx:rw
+    networks:
+      - proxy_net
+
+  nodeapi:
+    build: ./node-api
+    container_name: ip_manager
+    restart: unless-stopped
+    # no published ports - reachable via nginx reverse proxy at /api/
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:rw
+      - ./logs/node:/var/log/ip_manager:rw
+    environment:
+      RULES_FILE: /etc/nginx/conf.d/ip-rules.conf
+      ADMIN_TOKEN: "changeme-token"   # change before prod
+    networks:
+      - proxy_net
+
+  site1:
+    image: nginx:alpine
+    container_name: site1
+    volumes:
+      - ./site1:/usr/share/nginx/html:ro
+    networks:
+      - proxy_net
+
+  site2:
+    image: nginx:alpine
+    container_name: site2
+    volumes:
+      - ./site2:/usr/share/nginx/html:ro
+    networks:
+      - proxy_net
+
+networks:
+  proxy_net:
+    driver: bridge
