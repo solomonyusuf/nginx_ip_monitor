@@ -1,51 +1,33 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  nginx:
-    build: ./nginx
-    container_name: nginx_gateway
-    restart: unless-stopped
-    ports:
-      - "80:80"       # ONLY public port
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:rw
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./site1:/var/www/site1:ro
-      - ./site2:/var/www/site2:ro
-      - ./logs/nginx:/var/log/nginx:rw
-    networks:
-      - proxy_net
-
-  nodeapi:
-    build: ./node-api
-    container_name: ip_manager
-    restart: unless-stopped
-    # no published ports - reachable via nginx reverse proxy at /api/
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:rw
-      - ./logs/node:/var/log/ip_manager:rw
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_server
+    restart: always
     environment:
-      RULES_FILE: /etc/nginx/conf.d/ip-rules.conf
-      ADMIN_TOKEN: "changeme-token"   # change before prod
-    networks:
-      - proxy_net
-
-  site1:
-    image: nginx:alpine
-    container_name: site1
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: nginx_logs
+      MYSQL_USER: logger
+      MYSQL_PASSWORD: loggerpass
+    ports:
+      - "3306:3306"
     volumes:
-      - ./site1:/usr/share/nginx/html:ro
-    networks:
-      - proxy_net
+      - mysql_data:/var/lib/mysql
 
-  site2:
-    image: nginx:alpine
-    container_name: site2
-    volumes:
-      - ./site2:/usr/share/nginx/html:ro
-    networks:
-      - proxy_net
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
 
-networks:
-  proxy_net:
-    driver: bridge
+volumes:
+  mysql_data:
