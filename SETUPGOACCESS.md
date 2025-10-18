@@ -41,7 +41,7 @@ sudo make install
 
 ```bash
 cd /usr/share/GeoIP/
-sudo wget "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=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&account_id=1239906&suffix=tar.gz" -O GeoLite2-City.tar.gz
+sudo wget "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=****&account_id=****&suffix=tar.gz" -O GeoLite2-City.tar.gz
 sudo tar -xvzf GeoLite2-City.tar.gz
 sudo cp GeoLite2-City_*/GeoLite2-City.mmdb ./
 sudo rm -rf GeoLite2-City*
