@@ -1,6 +1,9 @@
 version: '3.8'
 
 services:
+  # ======================
+  # MySQL for Nginx Logs
+  # ======================
   mysql:
     image: mysql:8.0
     container_name: mysql_server
@@ -15,19 +18,69 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-  phpmyadmin:
+  # phpMyAdmin for MySQL
+  nginx_phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
-    container_name: phpmyadmin
+    container_name: nginx-phpmyadmin
     restart: always
+    ports:
+      - "8080:80"
     environment:
       PMA_HOST: mysql
       PMA_USER: root
       PMA_PASSWORD: rootpassword
       UPLOAD_LIMIT: 100M
-    ports:
-      - "8080:80"
     depends_on:
       - mysql
 
+  # ======================
+  # Matomo Analytics
+  # ======================
+  matomo-db:
+    image: mariadb:10.6
+    container_name: matomo-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: matomo
+      MYSQL_USER: matomo
+      MYSQL_PASSWORD: matomopass
+    volumes:
+      - db_data:/var/lib/mysql
+
+  matomo:
+    image: matomo:latest
+    container_name: matomo-app
+    restart: always
+    ports:
+      - "9090:80"
+    depends_on:
+      - matomo-db
+    environment:
+      MATOMO_DATABASE_HOST: matomo-db
+      MATOMO_DATABASE_ADAPTER: mysql
+      MATOMO_DATABASE_TABLES_PREFIX: matomo_
+      MATOMO_DATABASE_USERNAME: matomo
+      MATOMO_DATABASE_PASSWORD: matomopass
+      MATOMO_DATABASE_DBNAME: matomo
+    volumes:
+      - matomo_data:/var/www/html
+
+  matomo_phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: matomo-phpmyadmin
+    restart: always
+    ports:
+      - "9091:80"
+    environment:
+      PMA_HOST: matomo-db
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+      UPLOAD_LIMIT: 100M
+    depends_on:
+      - matomo-db
+
 volumes:
   mysql_data:
+  db_data:
+  matomo_data:
